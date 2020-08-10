@@ -1,0 +1,951 @@
+﻿<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta http-equiv="Content-Language" content="da">
+
+		<title>Matematik Test</title>
+		<meta name="description" content="En matematik prøve designet for 8. klasse elever">
+		<meta name="author" content="Daniel Svejstrup Christensen">
+		<meta name="viewport" content="width=device-width,user-scalable=no">
+		<meta name="robots" content="noindex, nofollow" />
+		<link rel="stylesheet" type="text/css" href="normalize.css">
+		<link rel="stylesheet" type="text/css" href="style.css">
+		<link href='http://fonts.googleapis.com/css?family=Ubuntu:300,400,700' rel='stylesheet' type='text/css'>
+		<link href='http://fonts.googleapis.com/css?family=Ubuntu+Mono' rel='stylesheet' type='text/css'>
+
+		<link rel="apple-touch-icon" sizes="57x57" href="/assets/favicon/apple-touch-icon-57x57.png">
+		<link rel="apple-touch-icon" sizes="60x60" href="/assets/favicon/apple-touch-icon-60x60.png">
+		<link rel="apple-touch-icon" sizes="72x72" href="/assets/favicon/apple-touch-icon-72x72.png">
+		<link rel="apple-touch-icon" sizes="76x76" href="/assets/favicon/apple-touch-icon-76x76.png">
+		<link rel="apple-touch-icon" sizes="114x114" href="/assets/favicon/apple-touch-icon-114x114.png">
+		<link rel="apple-touch-icon" sizes="120x120" href="/assets/favicon/apple-touch-icon-120x120.png">
+		<link rel="apple-touch-icon" sizes="144x144" href="/assets/favicon/apple-touch-icon-144x144.png">
+		<link rel="apple-touch-icon" sizes="152x152" href="/assets/favicon/apple-touch-icon-152x152.png">
+		<link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon/apple-touch-icon-180x180.png">
+		<link rel="icon" type="image/png" href="/assets/favicon/favicon-32x32.png" sizes="32x32">
+		<link rel="icon" type="image/png" href="/assets/favicon/android-chrome-192x192.png" sizes="192x192">
+		<link rel="icon" type="image/png" href="/assets/favicon/favicon-96x96.png" sizes="96x96">
+		<link rel="icon" type="image/png" href="/assets/favicon/favicon-16x16.png" sizes="16x16">
+		<link rel="manifest" href="/assets/favicon/manifest.json">
+		<meta name="msapplication-TileColor" content="#ffc40d">
+		<meta name="msapplication-TileImage" content="/assets/favicon/mstile-144x144.png">
+		<meta name="theme-color" content="#ffffff">
+
+		<script src="resize.js" type="text/javascript"></script>
+		<script src="element.js" type="text/javascript"></script>
+		<script src="connector.js" type="text/javascript"></script>
+		<script src="dataHandler.js" type="text/javascript"></script>
+		<script src="assignment.js" type="text/javascript"></script>
+		<script src="page.js" type="text/javascript"></script>
+		<script src="cui2d.js" type="text/javascript"></script>
+		<script src="treeAnimation.js" type="text/javascript"></script>
+
+		<script>
+			var canvas;
+			var context;
+			var width;
+			var height;
+
+			var state = 0;
+			var isDown;
+			var isOver;
+
+			var btnStart;
+			var timer;
+			var scrollBar;
+			var progressBar;
+			var btnTerminate;
+			var resultList;
+			var tips;
+			var backdrop;
+			var inputField;
+			var rules;
+			var mouseEnabled = true;
+			var scrollTime = 0;
+			var scrollEvent;
+
+			var fullscreenFirst = true;
+			var hidden;
+			var urlLink = "http://goo.gl/CWYw1v";
+			
+			var qualitative = 0; // NOT INDIVIDUAL TEST
+
+			function init(){
+				// Initiate global variables
+				canvas = document.getElementsByTagName('canvas')[0];
+				context = canvas.getContext('2d');
+				btnStart = document.getElementsByClassName("btnStart")[0];
+				timer = document.getElementsByClassName("timer")[0];
+				scrollBar = document.getElementsByClassName("scrollBar")[0];
+				progressBar = document.getElementsByClassName("progressBar")[0];
+				btnTerminate = document.getElementsByClassName("btnTerminate")[0];
+				resultList = document.getElementsByClassName("results")[0];
+				tips = document.getElementsByClassName("tips")[0];
+				backdrop = document.getElementsByClassName("backdrop")[0];
+				inputField = document.getElementsByClassName("inputField")[0];
+				rules = document.getElementsByClassName("rules")[0];
+
+				// Add click events for the canvas
+				canvas.addEventListener('click', click);
+                canvas.addEventListener("touchstart", click);
+
+				/**
+				  * Gets a list of all HTML elements in the document
+				  * For each element, if it has an onclick (mouse click) function,
+				  * add a touchstart function (mouse click for touch devices) which calls to the onclick function
+				  */
+				var list = document.getElementsByTagName("*");
+				for (var i = 0; i < list.length; i++){
+					if (list[i].onclick != null){
+						list[i].addEventListener("touchstart", function(e){e.preventDefault();if (e.target.onclick) e.target.onclick();});
+					}
+				}
+
+				// Instantiate DataHandler
+				dataHandler = new DataHandler();
+
+				/** If offline, skip user login */
+				if (!dataHandler.connector)
+					showRules();
+
+				update();
+			}
+
+			function showRules(){
+				// Displays the information page
+				rules.style.display = "block";
+				inputField.style.display = "none";
+				inputField.getElementsByClassName("popClose")[0].style.display = "block";
+			}
+
+			function inputSubmit(e){
+				/** This function is called when input is submitted from the input field */
+
+				// Get input value from input field
+				var val = document.getElementById("text").value;
+
+				/**
+				  * If state is equal to zero, the input is for the user login,
+				  * and a login attempt is performed with the input
+				  *
+				  * Else if the state is equal to 1, and there is no remaining time,
+				  * the submitted input is for the system to continue after the
+				  * test has ended
+				  *
+				  * Else the submitted input is for an assignment
+				  */
+				
+				if (state == 0)
+					dataHandler.connector.initConnection(val);
+				else if (state == 1 && page.time <= 0)
+					end();
+				else{
+					// Submit answer
+					assignment.submit(val);
+					
+					/** The input is submitted from the feedback page */
+					if(state == 2){
+						// Update tree animation
+						goidel = false;
+						firstCall = false;
+						updateTree(dataHandler.getGrade());
+					}
+				}
+			}
+
+			function update(){
+				// Update global width and height variables
+				resize();
+				
+				/**
+				  * If input field is visible,
+				  * update position
+				  */
+				if (inputField.style.display != "none"){
+					inputField.style.top = (height-182)/2+"px";
+					inputField.style.left = (width-282)/2+"px";
+				}
+
+				
+				if (state == 0){
+					// Update information page position
+					rules.style.left = (width > 642 ? (width-(642))/2+"px" : 0);
+				}
+				else if (state == 1){
+					// Update page position on canvas
+					if (page.y > page.margin)
+						page.y = page.margin;
+					else if (page.y + page.height < height - page.margin)
+						page.y = height - page.margin - page.height;
+
+					// Update scroll bar
+					var scrollBar = document.getElementsByClassName('scrollBar')[0];
+					page.scrollHeight = (height <= 320 || width <= 320 ? 7*20 : 10*20) + 20;
+					scrollBar.style.top = (height-page.scrollHeight)/2 + "px";
+					
+					// Update scroll bar line
+					var scrollLine = scrollBar.getElementsByTagName("div")[0];
+						scrollLine.style.height = parseInt((height/(page.height+page.margin*2))*page.scrollHeight)+"px";
+						scrollLine.style.top = 1-parseInt(((page.y-page.margin)/(page.height+page.margin*2))*page.scrollHeight)+"px";
+
+					// Update page visuals, elements and size
+					page.update();
+					
+					// Update scroll bar quick buttons
+					var list = scrollBar.getElementsByTagName('li');
+					for (var i = 0; i < list.length; i++){
+						if (answers[i] != null)
+							list[i].style.background = "#63B8FF";
+						else
+							list[i].style.background = "#fff";
+					}
+				}
+				else if (state==2){
+					var maxWidth;
+
+					// Responsive width
+					if (width > 1024)
+						maxWidth = 350;
+					else if (width > 767)
+						maxWidth = 250;
+					else
+						maxWidth = 150;
+
+					// Update progress bar position
+					progressBar.style.left = ((width-maxWidth+2)/2)+"px";
+
+					var correctBar = document.getElementById("correctBar");
+					var correctedBar = document.getElementById("correctedBar");
+
+					// Update progress
+					correctBar.style.width = (dataHandler.getNumCorrect()/20)*100+"%";
+					correctedBar.style.left = correctBar.style.width;
+					correctedBar.style.width = (dataHandler.getNumCorrected()/20)*100+"%";
+					
+					var totalNum = dataHandler.getNumCorrect() + dataHandler.getNumCorrected();
+					
+					if (totalNum == 20 || totalNum == 0)
+						correctedBar.style.border = "none";
+					else
+						correctedBar.style.borderLeft = "1px";
+
+					// Update hints window position
+					var tipsWidth = (width > 767 ? 180 : 90) + 7;
+					tips.style.left = parseInt(inputField.style.left) - tipsWidth + "px";
+					tips.style.top = inputField.style.top;
+				}
+				else{
+					// Update control group feedback
+					
+					/** This removes everything in the document and replaces it with a simple text and grade */
+					document.body.innerHTML = "<div style=\"width: 100%; height:100%, text-align: center; font-size: 24px; line-height:200%;\">Din karakter er " + dataHandler.badgeGrade + "</div>";
+					document.body.onclick = function() {window.location.href = urlLink;};
+					document.body.style.backgroundColor= "white";
+					document.body.style.textAlign = "center";
+				}
+			}
+
+			function start(){
+				// Test start
+				state = 1;
+				
+				// Hide information page
+				rules.style.display = "none";
+				
+				// Display scroll bar and clock
+				timer.style.display = "block";
+				scrollBar.style.display = "block";
+
+				if (dataHandler)
+					dataHandler.begin();
+
+				// Update font of input field to properly display mathematics
+				inputField.getElementsByTagName("li")[0].className = "math";
+
+				// Instantiate Page object
+				page = new Page();
+				
+				/** Look for restored answers from a previous session */
+				for (var i = 0; i < page.assignmentList.length; i++)
+					if (answers[i])
+						page.assignmentList[i].answer = answers[i];
+
+				// Add mouse events
+				addWheelListener(window, wheel);
+                canvas.addEventListener("mousedown", down);
+				window.addEventListener('mousemove', move);
+				window.addEventListener("mouseup", up);
+				scrollBar.getElementsByTagName("div")[0].addEventListener("mousedown", scrollDown);
+
+				// Add touch events
+                canvas.addEventListener("touchstart", down);
+				window.addEventListener('touchmove', move);
+				window.addEventListener("touchend", up);
+
+				// Fullscreen detection
+				if (
+					document.fullscreenEnabled || 
+					document.webkitFullscreenEnabled || 
+					document.mozFullScreenEnabled ||
+					document.msFullscreenEnabled
+				){
+					document.addEventListener("fullscreenerror", function() {/* Fullscreen failed*/});
+					var body = document.getElementsByTagName("body")[0];
+					if (body.requestFullscreen) {
+						body.requestFullscreen();
+						document.addEventListener("fullscreenchange", fullscreenChange);
+					}
+					else if (body.webkitRequestFullscreen) {
+						body.webkitRequestFullscreen();
+						document.addEventListener("webkitfullscreenchange", fullscreenChange);
+					}
+					else if (body.mozRequestFullScreen) {
+						body.mozRequestFullScreen();
+						document.addEventListener("mozfullscreenchange", fullscreenChange);
+					}
+					else if (body.msRequestFullscreen) {
+						body.msRequestFullscreen();
+						document.addEventListener("MSFullscreenChange", fullscreenChange);
+					}
+				}
+
+				// Add clipboard events
+				document.addEventListener('paste', paste);
+				document.addEventListener('copy', copy);
+				document.addEventListener('cut', cut);
+
+				update();
+			}
+
+			function clipboardEvent(str,e){
+				// Abort if no dataHandler
+				if (!dataHandler)
+					return;
+
+				var data = null;
+
+				if (window.clipboardData)
+					data = window.clipboardData.getData('Text');
+				else
+					data = e.clipboardData.getData('text');
+
+				// Post data to server
+				dataHandler.clipboard(str,data);
+			}
+
+			function paste(e){
+				clipboardEvent("paste",e);
+			}
+
+			function copy(e){
+				clipboardEvent("copy",e);
+			}
+
+			function cut(e){
+				clipboardEvent("cut",e);
+			}
+
+			function fullscreenChange(){
+				// Post event to server
+				if (fullscreenFirst){
+					fullscreenFirst = false;
+					dataHandler.fullscreen("enter");
+				}
+				else{
+					dataHandler.fullscreen("leave");
+				}
+			}
+
+			function promptEnd(){
+				/** Displays prompt window informing the user that the test has ended */
+
+				backdrop.style.display = "block";
+				inputField.style.display = "block";
+
+				var li = inputField.getElementsByTagName("li")[0];
+				
+				li.innerHTML = "20 minutter er gået, og prøven er slut.<br/><br/>Din opgave er afleveret, og du kan nu se dine resultater.";
+				inputField.getElementsByClassName("popClose")[0].style.display = "none";
+				li.style.className = "";
+				document.getElementById("text").style.display = "none";
+				document.getElementById("submit").value = "Fortsæt";
+			}
+
+			function tutorial(){
+				/** Displays a tutorial for how to naviate the feedback page */
+
+				// Abort if all answers are correct
+				if (document.getElementsByClassName("results")[0].getElementsByTagName("ul")[1].getElementsByTagName("li").length == 0)
+					return;
+
+				backdrop.style.display = "block";
+				backdrop.style.opacity = 0.8;
+				inputField.style.display = "block";
+
+				var li = inputField.getElementsByTagName("li")[0];
+				
+				li.innerHTML = "Klik på den fremhævede ligning til venstre.";
+				inputField.getElementsByClassName("popClose")[0].style.display = "none";
+				document.getElementById("text").style.display = "none";
+				document.getElementById("submit").style.display = "none";
+
+				// Highlights the first incorrect assignment
+				var nu = document.getElementsByClassName("results")[0].getElementsByTagName("ul")[1].getElementsByTagName("li")[0];
+				nu.style.zIndex = 3;
+				nu.style.fontWeight = "bold";	
+			}
+			
+			function end(){
+				/** This function is called when the user continues after the test has ended */
+				dataHandler.computeResults();
+			}
+				
+			function endCommence(group){
+				/**
+				  * This function is called after the user has been distributed a test group from the server at hand-in
+				  *
+				  * If group is equal to 1, the user is in the control group,
+				  * else the user is in the test group
+				  */
+
+				if(group == 1)
+					state = 3;
+				else
+					state = 2;
+
+				// Hide clock and scroll bar
+				timer.style.display = "none";
+				scrollBar.style.display = "none";
+
+				// Display progress bar, terminate button, and assignment lists for the feedback page
+				progressBar.style.display = "block";
+				btnTerminate.style.display = "block";
+				resultList.style.display = "block";
+				window.removeEventListener("mousewheel", wheel);
+
+				
+				backdrop.style.display = "none";
+				inputField.style.display = "none";
+				var li = inputField.getElementsByTagName("li")[0];
+				li.className = "math";
+				li.className.innerHTML = "<span></span>";
+				document.getElementById("text").style.display = "inline";
+				document.body.style.background = "#333";
+
+				// Remove event listeners
+				scrollBar.getElementsByTagName("div")[0].removeEventListener("mousedown", scrollDown);
+				document.removeEventListener("fullscreenchange", fullscreenChange);
+				document.removeEventListener("webkitfullscreenchange", fullscreenChange);
+				document.removeEventListener("mozfullscreenchange", fullscreenChange);
+				document.removeEventListener("MSFullscreenChange", fullscreenChange);
+				document.removeEventListener('paste', paste);
+				document.removeEventListener('copy', copy);
+				document.removeEventListener('cut', cut);
+
+				// Remove all elements from the canvas
+				clearElements();
+				page = null;
+				
+				if(state==2){
+					// Convert list of HTML elements to Array format
+					var list, elmList = document.getElementsByClassName("results")[0].getElementsByTagName("ul")[1].getElementsByTagName("li");
+						try {
+							/*
+							 * Method does not work for all browsers
+							 * Needs fall-back method
+							 */
+							list = [].slice.call(elmList);
+						}
+						catch(e){
+							// Slower fall-back method
+							list = $A(elmList);
+						}
+
+					
+					var ul = document.getElementsByClassName("results")[0].getElementsByTagName("ul")[0];
+					var results = dataHandler.getResults();
+
+					// Sort assignment HTML elements into lists of correct and incorrect
+					for(var i = 0; i < list.length; i++) {
+						list[i].innerHTML = i+1+".<span>" + math[i]+ "</span>";
+						list[i].id = "assign"+i;
+						if(results[i] == 0){
+							ul.appendChild(list[i]);
+							list[i].className = "correct"; 						
+						}
+					}
+
+					// Disable mouse
+					mouseEnabled = false;
+
+					// Update visuals
+					var badge = document.getElementsByClassName("badge")[0];
+					badge.style.backgroundImage = "url(badge"+getBadge()+".png)";
+					badge.style.backgroundRepeat = "no-repeat";
+					badge.style.display = "block";
+					update();
+					updateTree(dataHandler.getGrade());
+					getTreeAnimation();
+				}
+				else
+					update();
+
+				// Log feedback page enter to server
+				dataHandler.session("start");
+			}
+
+			function getBadge() {
+				// Converts grade to badge index
+				var grade = dataHandler.badgeGrade;
+				if (grade < 0)
+					return 1;
+				if (grade < 2)
+					return 2;
+				if (grade < 4)
+					return 3;
+				if (grade < 7)
+					return 4;
+				if (grade < 10)
+					return 5;
+				if (grade < 12)
+					return 6;
+				return 7;
+			}
+
+			function $A(iterable) {
+				/*
+				 * Convert list of HTML elements to Array format
+				 * Cross browser compatible
+				 */
+
+				if (!iterable) return [];
+				if ('toArray' in Object(iterable)) return iterable.toArray();
+				var length = iterable.length || 0, results = new Array(length);
+				while (length--) results[length] = iterable[length];
+				return results;
+			}
+
+			function terminate(){
+				// Redirects user to URL
+				window.location.href = urlLink;
+			}
+
+			/*
+			 * --------------------------
+			 *	BROWSER EVENTS
+			 * --------------------------
+			 */
+
+			window.onbeforeunload = function(e) {
+				// Displays warning when user is attempting to close the tab in an unintended manner
+
+				if (state > 1 && dataHandler)
+					dataHandler.session("end");
+				if (state == 1)
+					return ("Du er ved at forlade siden inden prøven er afleveret!");
+				if (state == 2)
+					return ('Brug "Afslut" knappen for at forlade siden og gå til online spørgeskema.');
+			}
+
+			/*
+			 * --------------------------
+			 *	MOUSE EVENTS
+			 * --------------------------
+			 */ 
+			
+			function scrollDown(e){
+				/** This function is called when the user clicks the scroll bar */
+
+				if (!e.pageY){
+					e.preventDefault();
+					page.scrollPrevY = e.targetTouches[0].pageY;
+				}
+				else
+					page.scrollPrevY = e.pageY;
+
+				window.addEventListener("mousemove", scrollMove);
+				window.addEventListener("touchmove", scrollMove);
+			}
+			
+			function scrollMove(e){
+				/**
+				  * While the user keeps touching the scroll bar or hold the mouse down upon the scroll bar,
+				  * the scroll bar will follow the mouse or touch movement of the user, and scroll accordingly
+				  */
+
+				// Get y across devices
+				var y;
+				if (!e.pageY){
+					e.preventDefault();
+					y = e.targetTouches[0].pageY;
+				}
+				else
+					y = e.pageY;
+
+				// Scrolls
+				page.y += (page.scrollPrevY - y)*(page.height/page.scrollHeight);
+				page.scrollPrevY = y;
+
+				// Post event to server
+				var timestamp = Date.now();
+				if (state == 1 && (scrollEvent != "scrollBar" || timestamp - scrollTime > 1000) && dataHandler){
+					dataHandler.scroll(timestamp,"scrollBar");
+					scrollTime = timestamp;
+					scrollEvent = "scrollBar";
+				}
+
+				update();
+			}
+
+			function click(e) {
+				// Get x and y across devices
+				var x, y;
+				if (!e.pageX){
+					e.preventDefault();
+					x = e.targetTouches[0].pageX;
+					y = e.targetTouches[0].pageY;
+				}
+				else{
+					x = e.pageX;
+					y = e.pageY;
+				}
+
+				/**
+				  * Debug mode
+				  * If the user clicks in the very upper left corner of the screen,
+				  * the time remaining time of the test will be set to 1 second,
+				  * allowing the user to easily skip to the feedback page
+				  */
+				if (dataHandler.mode == "offline" && page && x < 40 && y < 40)
+					page.time = 1;
+
+				canvasObj = null;
+				canvasObjIndex = null;
+
+				collisionDetect(x,y,"click");
+				
+				// Post data to server
+				if (dataHandler)
+					dataHandler.clickCanvas(x,y);
+			}
+
+			function down(e) {
+				/**
+				  * This function is called when the user the canvas
+				  * If no collision is detected, the user will be able to scroll the page by dragging
+				  */
+
+				// Get x and y across devices
+				var x, y;
+				if (!e.pageX){
+					e.preventDefault();
+					x = e.targetTouches[0].pageX;
+					y = e.targetTouches[0].pageY;
+				}
+				else{
+					x = e.pageX;
+					y = e.pageY;
+				}
+			
+				if (page && !collisionDetect(x,y)){
+					page.prevY = y;
+					isDown = true;
+				}
+			}
+
+			function move(e) {
+				// Get x and y across devices
+				var x, y;
+				if (!e.pageX){
+					e.preventDefault();
+					x = e.targetTouches[0].pageX;
+					y = e.targetTouches[0].pageY;
+				}
+				else{
+					x = e.pageX;
+					y = e.pageY;
+				}
+
+				// Aborts if it is not doing the test
+				if (state != 1)
+					return;
+
+				if (isDown){
+					//Scrolls
+					page.y -= page.prevY - y;
+					page.prevY = y;
+
+					// Post event to server
+					var timestamp = Date.now();
+					if ((scrollEvent != "drag" || timestamp - scrollTime > 1000) && dataHandler){
+						dataHandler.scroll(timestamp,"drag");
+						scrollTime = timestamp;
+						scrollEvent = "drag";
+					}
+
+					update();
+				}
+				
+				/**
+				  * Updates the mouse over target whenver the mouse moves
+				  * If no target is found, it is set to null
+				  */
+				if (!collisionDetect(x,y,"over")){
+					isOver = null;
+					update();
+				}
+			}
+
+			function up(e) {
+				// Stops dragging
+				isDown = false;
+				window.removeEventListener("mousemove", scrollMove);
+				window.removeEventListener("touchmove", scrollMove);
+			}
+
+			function wheel(e) {
+				/**
+				  * This function is called when the user uses the mouse wheel
+				  * Scrolls the page according to the wheel sensitivity
+				  * Varies greatly between browsers
+				  */
+
+				page.y += normalizeWheelSpeed(e) * 100;
+				isOver = null;
+				update();
+				
+
+				// Post event to server
+				var timestamp = Date.now();
+				if (state == 1 && (scrollEvent != "wheel" || timestamp - scrollTime > 1000) && dataHandler){
+					dataHandler.scroll(timestamp,"wheel");
+					scrollTime = timestamp;
+					scrollEvent = "wheel";
+				}
+			}
+			
+			/*
+			 * --------------------------
+			 *  DATA COLLECT
+			 * --------------------------
+			 */ 
+			
+			function clock(e){
+				/** this function is called by the clock HTML element */
+				if(dataHandler)
+					dataHandler.clock(e);
+			}
+			
+			function inputFocus(e){
+				/** this function is called by the input field HTML element */
+				if(dataHandler)
+					dataHandler.focus(e);
+			}
+			
+			function clickDiv(obj,i){
+				/** this function is called various HTML elements */
+				if(dataHandler)
+					dataHandler.clickDiv(obj,i);
+			}
+
+			/**
+			  * Handle scrolling with mousewheel across browsers
+			  * https://developer.mozilla.org/en-US/docs/Web/Events/wheel#Listening_to_this_event_across_browser
+			  */
+			var prefix = "", _addEventListener, onwheel, support;
+
+			// detect event model
+			if ( window.addEventListener ) {
+				_addEventListener = "addEventListener";
+			} else {
+				_addEventListener = "attachEvent";
+				prefix = "on";
+			}
+
+			// detect available wheel event
+			support = "onwheel" in document.createElement("div") ? "wheel" : // Modern browsers support "wheel"
+					document.onmousewheel !== undefined ? "mousewheel" : // Webkit and IE support at least "mousewheel"
+					"DOMMouseScroll"; // let's assume that remaining browsers are older Firefox
+
+					window.addWheelListener = function( elem, callback, useCapture ) {
+						_addWheelListener( elem, support, callback, useCapture );
+
+				// handle MozMousePixelScroll in older Firefox
+				if( support == "DOMMouseScroll" ) {
+					_addWheelListener( elem, "MozMousePixelScroll", callback, useCapture );
+				}
+			};
+
+			function _addWheelListener( elem, eventName, callback, useCapture ) {
+				elem[ _addEventListener ]( prefix + eventName, support == "wheel" ? callback : function( originalEvent ) {
+					!originalEvent && ( originalEvent = window.event );
+
+					// create a normalized event object
+					var event = {
+						// keep a ref to the original event object
+						originalEvent: originalEvent,
+						target: originalEvent.target || originalEvent.srcElement,
+						type: "wheel",
+						deltaMode: originalEvent.type == "MozMousePixelScroll" ? 0 : 1,
+						deltaX: 0,
+						deltaZ: 0,
+						preventDefault: function() {
+							originalEvent.preventDefault ?
+							originalEvent.preventDefault() :
+							originalEvent.returnValue = false;
+						}
+					};
+
+					// calculate deltaY (and deltaX) according to the event
+					if ( support == "mousewheel" ) {
+						event.deltaY = - 1/40 * originalEvent.wheelDelta;
+						// Webkit also support wheelDeltaX
+						originalEvent.wheelDeltaX && ( event.deltaX = - 1/40 * originalEvent.wheelDeltaX );
+					} else {
+						event.deltaY = originalEvent.detail * 120;
+					}
+
+					// it's time to fire the callback
+					return callback( event );
+
+				}, useCapture || false );
+			}
+
+			/**
+			  * Get a normalized delta value for a mouse wheel event
+			  * http://stackoverflow.com/a/24595588/1155596
+			  */
+			function normalizeWheelSpeed(event) {
+				var normalized;
+				if (event.wheelDelta) {
+					normalized = (event.wheelDelta % 120 - 0) == -0 ? event.wheelDelta / 120 : event.wheelDelta / 12;
+				} else {
+					var rawAmmount = event.deltaY ? event.deltaY : event.detail;
+					normalized = -(rawAmmount % 3 ? rawAmmount * 10 : rawAmmount / 3)/1000;
+				}
+				return normalized;
+			}
+		</script>
+	</head>
+	<body onLoad="init()" onresize="update()">
+		<canvas></canvas>
+		<div class="scrollBar">
+			<div onclick="clickDiv('scrollbar')">
+			</div>
+			<ul>
+				<li onclick="gotoAssignment(this)"></li>
+				<li onclick="gotoAssignment(this)"></li>
+				<li onclick="gotoAssignment(this)"></li>
+				<li onclick="gotoAssignment(this)"></li>
+				<li onclick="gotoAssignment(this)"></li>
+				<li onclick="gotoAssignment(this)"></li>
+				<li onclick="gotoAssignment(this)"></li>
+				<li onclick="gotoAssignment(this)"></li>
+				<li onclick="gotoAssignment(this)"></li>
+				<li onclick="gotoAssignment(this)"></li>
+				<li onclick="gotoAssignment(this)"></li>
+				<li onclick="gotoAssignment(this)"></li>
+				<li onclick="gotoAssignment(this)"></li>
+				<li onclick="gotoAssignment(this)"></li>
+				<li onclick="gotoAssignment(this)"></li>
+				<li onclick="gotoAssignment(this)"></li>
+				<li onclick="gotoAssignment(this)"></li>
+				<li onclick="gotoAssignment(this)"></li>
+				<li onclick="gotoAssignment(this)"></li>
+				<li onclick="gotoAssignment(this)"></li>
+			</u>
+		</div>
+		<div class="timer" onmouseover="clock('over')" onmouseout="clock('out')" onclick="clock('click')">
+			<div></div>
+			<span>20:00</span>
+		</div>
+
+		<div class="results">
+			<div>
+				<h3 onmouseover="this.parentNode.style.background='#bbb'" onmouseout="this.parentNode.style.background='none'" onclick="toggleList(0)">Løste Opgaver</h3>
+				<ul></ul>
+			</div>
+			<div>
+				<h3 onmouseover="this.parentNode.style.background='#bbb'" onmouseout="this.parentNode.style.background='none'"  onclick="toggleList(1)">Uløste Opgaver</h3>
+				<ul>
+					<li onclick="showAssignment(this)"></li>
+					<li onclick="showAssignment(this)"></li>
+					<li onclick="showAssignment(this)"></li>
+					<li onclick="showAssignment(this)"></li>
+					<li onclick="showAssignment(this)"></li>
+					<li onclick="showAssignment(this)"></li>
+					<li onclick="showAssignment(this)"></li>
+					<li onclick="showAssignment(this)"></li>
+					<li onclick="showAssignment(this)"></li>
+					<li onclick="showAssignment(this)"></li>
+					<li onclick="showAssignment(this)"></li>
+					<li onclick="showAssignment(this)"></li>
+					<li onclick="showAssignment(this)"></li>
+					<li onclick="showAssignment(this)"></li>
+					<li onclick="showAssignment(this)"></li>
+					<li onclick="showAssignment(this)"></li>
+					<li onclick="showAssignment(this)"></li>
+					<li onclick="showAssignment(this)"></li>
+					<li onclick="showAssignment(this)"></li>
+					<li onclick="showAssignment(this)"></li>
+				</ul>
+			</div>
+		</div>
+
+		<div class="progressBar" onclick="clickDiv('progressbar')"> 
+			<span></span>
+			<div class="bar">
+				<div class="highlight"></div>
+				<div id="correctBar"></div>
+				<div id="correctedBar"></div>
+			</div>
+		</div>
+
+		<div class="button btnTerminate" onclick="terminate()">Afslut</div>
+			
+		<div class="backdrop" onclick="toggleAssignment(true);"></div>
+
+		<div class="rules">
+			<h3>Test i Matematiske ligninger</h3>
+			<p>8. Klasse, Filstedsvejens Skole, den 28. april 2015. </p>
+			<ul>
+				<h4>Instruktioner</h4>
+				<li>Du har 20 minutter til at færdiggøre matematiktesten fra du har trykket "Start Prøve".</li>
+				<li>Brug af internet og elektroniske hjælpemidler (f.eks. lommeregner) er ikke tilladt og bliver anset som snyd. Som hjælpemiddel må du benytte det udleverede kladdepapir og blyant. </li>
+				<li>Der er i alt 20 ligninger, som du skal løse. Programmet registrerer ikke mellemregninger, så du kan kun få point for et rigtigt svar.</li>
+			</ul>
+			<div class="button btnStart" onclick="start()">Start Prøve</div>
+		</div>
+	
+		<div class="tips">
+			<h4>Tips:</h4>
+			<p></p>
+		</div>
+	
+		<div class="badge"></div>
+
+		<div class="inputField">
+			<span class="popClose" onclick="toggleAssignment(true)">X</span>
+			<form name="inputForm" onsubmit="return false;">
+				<ul>
+					<li>
+						Log ind med det bruger ID du har fået udleveret.
+					<li>
+					<li>
+						<label>
+							<input onfocus="inputFocus('in')" onblur="inputFocus('out')" autofocus="autofocus" id="text" name="user" type="text" placeholder="bruger ID" value=""/>
+						</label>
+					</li>
+					<li>
+						<label>
+							<input onclick="inputSubmit()" id="submit" class="button btnSubmit" type="submit" value="Log ind" />
+						</label>
+						<span id="error"></span>
+					</li>
+				</ul>
+			</form>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,587 @@
+* {
+	margin: 0;
+	padding: 0;
+	-webkit-touch-callout: none;
+	  -webkit-user-select: none;
+	   -khtml-user-select: none;
+		 -moz-user-select: none;
+		  -ms-user-select: none;
+			  user-select: none;
+	cursor: default;
+}
+
+ul {
+	list-style-type: none;
+	padding: 0;
+	margin: 0;
+}
+
+a {
+	text-decoration: none;
+	color: inherit;
+	display:block;
+}
+
+body{
+	position: relative;
+	font-family: 'Helvetica', 'Arial', sans-serif;
+	font-size: 17px;
+	background: #eee;
+}
+
+html, body {
+	width: 100%;
+	height: 100%;
+}
+
+div {
+	position:absolute;
+	display: block;
+}
+
+canvas {
+	padding: 0;
+	margin: 0;
+	display:block;
+}
+
+.rules, .tips, .scrollBar, .timer,
+.btnTerminate, .results, .progressBar, .backdrop {
+	display: none;
+}
+
+.scrollBar{
+	right: 10px;
+}
+
+.scrollBar div{
+	position: absolute;
+	width: 10px;
+	height: 10px;
+	left:-11px;
+	top:1px;
+	background-color: #63B8FF;
+}
+
+.scrollBar ul li{
+	background: #fff;
+	height: 8px;
+	width: 8px;
+	margin: 1px;
+	padding: 0;
+	display: block;
+	border: 1px solid #63B8FF;
+}
+
+.scrollBar ul li:hover{
+	border-color: blue;
+}
+
+.timer{
+	position: relative;
+	height: 40px;
+	line-height: 40px;
+	width: 80px;
+	top: auto;
+	bottom: 90px;
+	left: 50px;
+}
+
+.timer span, .timer div{
+	position: absolute;
+	width:100%;
+	height:100%;
+	top:0;
+	left:0;
+}
+
+.timer span{
+	text-align: center;
+	opacity:0;
+}
+
+.timer div{
+	background: url("clock.png");
+	background-size: auto 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.timer:hover span{
+	opacity:1;
+}
+
+.timer:hover div{
+	opacity:0;
+}
+
+.badge{
+	display: none;
+	top: 40px;
+	right: 40px;
+	position: absolute;
+	background-size: auto 100%;
+	width: 160px;
+	height: 160px;
+}
+
+.backdrop{
+	z-index: 2;
+	left: 0;
+	top: 0;
+	margin:0;
+	padding:0;
+	width:100%;
+	height:100%;
+	background-color: black;
+	opacity: 0.5;
+}
+
+.button {
+	margin: 0;
+	padding: 12px 37px;
+	/*background-color:#7892c2;*/
+
+	border-radius:3px;
+	border:1px solid #4e6096;
+	color:#fff;
+	/*text-decoration:none;*/
+	text-shadow:0px 1px 0px #283966;
+	text-align: center;
+	cursor:pointer;
+
+	-webkit-border-radius:10px;
+	   -moz-border-radius:10px;
+
+	-webkit-box-shadow: 0 0 5px #ccc;
+	   -moz-box-shadow: 0 0 5px #ccc;
+			box-shadow: 0 0 5px #ccc;
+
+	background:-webkit-linear-gradient(top, #7892c2 5%, #476e9e 100%);
+	background:	  -moz-linear-gradient(top, #7892c2 5%, #476e9e 100%);
+	background:	   -ms-linear-gradient(top, #7892c2 5%, #476e9e 100%);
+	background:		-o-linear-gradient(top, #7892c2 5%, #476e9e 100%);
+	background:	      -webkit-gradient(linear, left top, left bottom, color-stop(0.05, #7892c2), color-stop(1, #476e9e));
+	background:		   linear-gradient(to bottom, #7892c2 5%, #476e9e 100%);
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#7892c2', endColorstr='#476e9e',GradientType=0);
+}
+
+
+.button:hover {
+	background:-webkit-linear-gradient(top, #476e9e 5%, #7892c2 100%);
+	background:   -moz-linear-gradient(top, #476e9e 5%, #7892c2 100%);
+	background:    -ms-linear-gradient(top, #476e9e 5%, #7892c2 100%);
+	background:     -o-linear-gradient(top, #476e9e 5%, #7892c2 100%);
+	background:	      -webkit-gradient(linear, left top, left bottom, color-stop(0.05, #476e9e), color-stop(1, #7892c2));
+	background:        linear-gradient(to bottom, #476e9e 5%, #7892c2 100%);
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#476e9e', endColorstr='#7892c2',GradientType=0);
+	/*background-color:#476e9e;*/
+}
+
+.button:active {
+	color: black;
+}
+	.btnSubmit{
+		width: 80px;
+		padding: 5px 10px;
+		height: 30px;
+	}
+
+	.btnStart{
+		width: 100px;
+		margin: 0 0 20px 15px;
+	}
+
+	.btnTerminate{
+		bottom: 40px;
+		right: 40px;
+
+		-webkit-box-shadow: -2px 1px 10px 0px rgba(50, 50, 50, 0.4);
+		   -moz-box-shadow: -2px 1px 10px 0px rgba(50, 50, 50, 0.4);
+				box-shadow: -2px 1px 10px 0px rgba(50, 50, 50, 0.4);
+	}
+
+.results{
+	top: 0px;
+	left: 0px;
+	height: 100%;
+	width: 400px;
+	max-width: 33%;
+	border-radius: 3px;
+	background-color: #999;
+	overflow: auto;
+
+	-webkit-box-shadow: 0 0 5px black;
+	   -moz-box-shadow: 0 0 5px black;
+			box-shadow: 0 0 5px black;
+}
+
+	.results div{
+		padding: 10px 0;
+		position: static;
+	}
+
+	.results div h3:hover{
+		position: static;
+	}
+
+	.results h3{
+		text-align: center;
+		margin-bottom: 5px;
+		cursor: pointer;
+	}
+
+	.results ul{
+		width: 100%;
+	}
+
+	.results li{
+		background-color:#ddd;
+	}
+
+	.results li{
+		position:relative;
+		display: block;
+		color:black;
+		padding:3px 20px;
+		margin: 1px 30px;
+		border-radius:3px;
+		border:1px solid #666;
+		cursor: pointer;
+	}
+
+	.results li span{
+		position: absolute;
+		display: inline-block;
+		left: 70px;
+		right: 0;
+		cursor: pointer;
+	}
+
+	.results li:hover{
+		background-color: white;
+		border:1px solid black;
+	}
+
+	.results ul .correct{
+		background-color:#99ff99;
+	}
+
+	.results ul .corrected{
+		background-color:#9999ff;
+	}
+
+	.results div:first-child li, .results div:first-child li span{
+		cursor: default;
+	}
+
+	.results ul .correct:hover, .results ul .corrected:hover{
+		border:1px solid #666;
+	}
+
+.progressBar{
+	position:absolute;
+	height: 30px;
+	width: 350px;
+	top:10px;
+	border-radius:3px;
+	border: 1px solid grey;
+
+	-webkit-box-shadow: 0 0 5px #ccc;
+	   -moz-box-shadow: 0 0 5px #ccc;
+		    box-shadow: 0 0 5px #ccc;
+}
+
+	.progressBar span{
+		position:absolute;
+		top:0;
+		left:0;
+		z-index: 4;
+		color: black;
+		margin: 0 auto;
+		width: 50px;
+		text-align: center;
+	}
+
+	.progressBar div{
+		width: 350px;
+		max-width: 500px;
+		position:absolute;
+		top: 0;
+		left: 0;
+		height: 100%;
+	}
+
+	.progressBar .highlight{
+		height: 60%;
+		z-index: 2;
+		background-color: rgba(255,255,255,0.1);
+		background-image: -webkit-linear-gradient(rgba(255,255,255,0.2),rgba(255,255,255,0));
+		background-image:    -moz-linear-gradient(rgba(255,255,255,0.2),rgba(255,255,255,0));
+		background-image:     -ms-linear-gradient(rgba(255,255,255,0.2),rgba(255,255,255,0));
+		background-image:      -o-linear-gradient(rgba(255,255,255,0.2),rgba(255,255,255,0));
+		background-image:         linear-gradient(rgba(255,255,255,0.2),rgba(255,255,255,0));
+	}
+
+	.progressBar .bar{
+		background-color: #333;
+		background-image: -webkit-linear-gradient(#111,#555);
+		background-image:    -moz-linear-gradient(#111,#555);
+		background-image:     -ms-linear-gradient(#111,#555);
+		background-image:      -o-linear-gradient(#111,#555);
+		background-image:         linear-gradient(#111,#555);
+	}
+
+	#correctBar{
+		z-index: 1;
+		width: 100px;
+		background-color: #00cc00;
+	}
+
+	#correctedBar{
+		border-right: 1px solid #111;
+		z-index: 1;
+		width: 49px;
+		left: 100px;
+		background-color: #0000cc;
+	}
+
+.tips{
+	z-index: 3;
+	height: 180px;
+	max-height: 180px;
+	background-color: #63B8FF;
+	height: 400px;
+	width: 180px;
+	max-width: 180px;
+	border-radius:3px;
+	border: 1px solid grey;
+	overflow: auto;
+
+	-webkit-box-shadow: -2px 1px 10px 0px rgba(50, 50, 50, 0.4);
+	   -moz-box-shadow: -2px 1px 10px 0px rgba(50, 50, 50, 0.4);
+		    box-shadow: -2px 1px 10px 0px rgba(50, 50, 50, 0.4);
+}
+
+.tips h4{
+	padding-top:10px;
+}
+
+.input{
+	z-index: 4;
+}
+
+.tips p{
+	padding:10px;
+	border-top: 1px solid blue;
+	text-align:left;
+	word-wrap: break-word;
+}
+
+.inputField, .rules {
+	z-index: 3;
+	/*height: 180px;*/
+	width: 280px;
+	background-color: #fff;
+	border-radius:3px;
+	border: 1px solid grey;
+
+	-webkit-box-shadow: -2px 1px 10px 0px rgba(50, 50, 50, 0.4);
+	   -moz-box-shadow: -2px 1px 10px 0px rgba(50, 50, 50, 0.4);
+		    box-shadow: -2px 1px 10px 0px rgba(50, 50, 50, 0.4);
+}
+
+.inputField li:first-child span{
+	margin-left: 10px;
+}
+
+.math, .results li {
+	font-family: "Ubuntu Mono", Courier, monospace;
+}
+
+.inputField li:last-child span{
+	color: red;
+}
+
+.inputField li{
+	margin: 20px;
+	font-family: 'Helvetica', 'Arial', sans-serif; /*Bianca har rettet*/
+}
+.popClose{
+	display:none;
+	position:absolute;
+	top:5px;
+	right: 5px;
+	width:15px;
+	height:15px;
+	border-radius:1px;
+	border: 1px solid grey;
+	cursor:pointer;
+	color:grey;
+	font-family: 'Helvetica', 'Arial', sans-serif;
+	font-size:15px;
+	text-align:center;
+	-moz-box-shadow: 0 0 2px #ccc;
+	-webkit-box-shadow: 0 0 2px #ccc;
+	box-shadow: 0 0 2px #ccc;
+	background-color:#CED5DE;
+	opacity:0.8;
+}
+
+	#text{
+		width: 228px;
+		border: 1px solid;
+		padding: 2px 5px;
+		border: 1px solid #aaaaff;
+		cursor: auto;
+	}
+
+	#text:hover{
+		border: 1px solid #6666ff;
+	}
+
+	#text:focus{
+		border: 1px solid #aaaaff;
+	}
+
+.rules {
+	box-sizing: border-box;
+	position: fixed;
+	top: 5px;
+	bottom: 5px;
+	margin: 10px 10px;
+	padding: 40px 20px;
+	max-width: 650px;
+	width: auto;
+	overflow: auto;
+}
+
+.rules h3, .rules h4, .rules li, .rules p{ /* Bianca rettet */
+	margin: 20px 0;
+	padding: 0 15px;
+}
+
+@media (max-width: 1024px) {
+	.timer {
+		bottom: 60px;
+		left: 0;
+	}
+	.progressBar, .progressBar .highlight, .progressBar .bar{
+		max-width: 250px;
+	}
+	.btnTerminate{
+		bottom: 20px;
+		right: 20px;
+	}
+	.badge{
+		top: 20px;
+		right: 20px;
+	}
+	.results {
+		font-size: 11px;
+	}
+	.results li{
+		padding:3px 10px;
+		margin: 1px 20px;
+	}
+	.results li span{
+		left: 40px;
+	}
+}
+
+@media (max-width: 767px) {
+
+	.tips{
+		font-size: 9px;
+		max-width: 90px;
+	}
+	.progressBar, .progressBar .highlight, .progressBar .bar{
+		max-width: 150px;
+		max-height: 20px;
+	}
+	.badge{
+		top: 10px;
+		right: 10px;
+		width: 80px;
+		height: 80px;
+	}
+	.btnTerminate{
+		font-size: 14px;
+		padding: 6px 12px;
+		bottom: 10px;
+		right: 10px;
+	}
+	.results {
+		font-size: 9px;
+	}
+	.results li{
+		margin: 1px 5px 1px 5px;
+	}
+	.results li span{
+		left: 30px;
+	}
+}
+
+@media (max-width: 480px) {
+	.results {
+		font-size: 7px;
+		max-width: auto;
+	}
+	.results li{
+		padding:3px 10px;
+	}
+}
+
+@media (max-height: 320px) {
+	.rules {
+		padding: 10px;
+		margin: 10px;
+	}
+	.badge{
+		width: 80px;
+		height: 80px;
+		top: 10px;
+		right: 10px;
+	}
+	.btnTerminate{
+		font-size: 14px;
+		padding: 6px 12px;
+		bottom: 10px;
+		right: 10px;
+	}
+}
+
+@media (max-height: 500px) {
+	.progressBar, .progressBar .highlight, .progressBar .bar{
+		max-height: 20px;
+	}
+	.rules {
+		padding: 10px;
+	}
+	.btnTerminate{
+		bottom: 20px;
+		right: 20px;
+	}
+	.badge{
+		top: 20px;
+		right: 20px;
+	}
+}
+
+@media (max-height: 320px) {
+	.scrollBar{
+		right: 5px;
+	}
+
+	.scrollBar div{
+		width: 7px;
+		height: 7px;
+		left:-8px;
+	}
+
+	.scrollBar ul li{
+		height: 5px;
+		width: 5px;
+	}
+}
+
